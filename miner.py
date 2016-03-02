@@ -1,3 +1,7 @@
+# Original file miner.py from http://courses.csail.mit.edu/6.857/2016/files/miner.py
+# The only things that were added are the proof of work (check that n1==n2==n3 in mod 2**d)
+# in solve_block(b) and the block_contents (our team names)
+
 import urllib2
 import json
 #   exclusively use SHA256 as our hash function
@@ -8,20 +12,6 @@ import random
 import requests
 
 NODE_URL = "http://6857coin.csail.mit.edu:8080"
-
-"""
-    This is a bare-bones miner compatible with 857coin, minus the final proof of
-    work check. We have left lots of opportunities for optimization. Partial
-    credit will be awarded for successfully mining any block that appends to
-    a tree rooted at the genesis block. Full credit will be awarded for mining
-    a block that adds to the main chan. Note that the faster you solve the proof
-    of work, the better your chances are of landing in the main chain.
-
-    Feel free to modify this code in any way, or reimplement it in a different
-    language or on specialized hardware.
-
-    Good luck!
-"""
 
 def solve_block(b):
     """
@@ -39,8 +29,11 @@ def solve_block(b):
         hashes = [hash_block_nonce_i(b, i).encode('hex') for i in range(3)]
         #   Parse the hash hex-strings as big-endian unsigned integers
         [n1,n2,n3] = [int(h, 16) for h in hashes]
-        #   TODO: Check if we found a valid proof of work
-        #   n1 == n2 == n3 all mod 2**d, nonces are unique
+        # Check if we found a valid proof of work n1 == n2 == n3 mod 2**d
+        if (n1 % 2**d == n2 % 2**d) and (n1 % 2**d == n3 % 2**d) and (n1 != n2) and (n1 != n3) and (n2 != n3):
+            return
+
+
 
 def main():
     """
@@ -50,7 +43,7 @@ def main():
     We will construct a block dictionary and pass this around to solving and
     submission functions.
     """
-    block_contents = "staff"
+    block_contents = "cath_yun,cmchin,sa25943" # team names
     while True:
         #   Next block's parent, version, difficulty
         next_header = get_next()
