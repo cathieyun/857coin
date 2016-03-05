@@ -23,15 +23,33 @@ def solve_block(b):
 
     """
     d = b["difficulty"]
+    nonce_dict = {} # find image --> [nonce]
+    all_image = []
     while True:
-        b["nonces"] = [rand_nonce(b["difficulty"]) for i in range(3)]
-        #   Encode the hashes as hex
-        hashes = [hash_block_nonce_i(b, i).encode('hex') for i in range(3)]
-        #   Parse the hash hex-strings as big-endian unsigned integers
-        [n1,n2,n3] = [int(h, 16) for h in hashes]
-        # Check if we found a valid proof of work n1 == n2 == n3 mod 2**d
-        if (n1 % 2**d == n2 % 2**d) and (n1 % 2**d == n3 % 2**d) and (n1 != n2) and (n1 != n3) and (n2 != n3):
-            return
+        new_nonce = rand_nonce(b["difficulty"])
+        b["nonces"][0] = new_nonce
+        new_hash = hash_block_nonce_i(b,0).encode('hex') 
+        new_hash = int(new_hash, 16) % 2**d
+        if new_hash in nonce_dict:
+            print 'in hash dict, lenth :  ' + str(len(nonce_dict[new_hash]))
+            nonce_dict[new_hash].append(new_nonce)
+        else:
+            # all_image.append(new_hash)
+            # print 'new hash'
+            nonce_dict[new_hash] = [new_nonce]
+        if len(nonce_dict[new_hash]) == 3:
+            print 'nonces found!'
+            b["nonces"] = nonce_dict[new_hash]
+            return 
+
+        # b["nonces"] = [rand_nonce(b["difficulty"]) for i in range(3)]
+        # #   Encode the hashes as hex
+        # hashes = [hash_block_nonce_i(b, i).encode('hex') for i in range(3)]
+        # #   Parse the hash hex-strings as big-endian unsigned integers
+        # [n1,n2,n3] = [int(h, 16) for h in hashes]
+        # # Check if we found a valid proof of work n1 == n2 == n3 mod 2**d
+        # if (n1 % 2**d == n2 % 2**d) and (n1 % 2**d == n3 % 2**d) and (n1 != n2) and (n1 != n3) and (n2 != n3):
+        #     return
 
 
 
@@ -44,18 +62,42 @@ def main():
     submission functions.
     """
     block_contents = "cath_yun,cmchin,sa25943" # team names
-    while True:
-        #   Next block's parent, version, difficulty
-        next_header = get_next()
-        #   Construct a block with our name in the contents that appends to the
-        #   head of the main chain
-        new_block = make_block(next_header, block_contents)
-        #   Solve the POW
-        print "Solving block..."
-        print new_block
-        solve_block(new_block)
-        #   Send to the server
-        add_block(new_block, block_contents)
+    # block = {
+    # "parentid": "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7",
+    # "difficulty": 32,
+    # "root": hash_to_hex(block_contents),
+    # "timestamp": long((time.time()+600)*1000*1000*1000),
+    # "version": 0,
+    # "nonces": [0, 0, 0]
+    # }
+    # solve_block(block)
+
+
+    test_block = {
+    "parentid": "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7",
+    "difficulty": 35,
+    "root": hash_to_hex(block_contents),
+    "timestamp": long((time.time()+600)*1000*1000*1000),
+    "version": 0,
+    "nonces": [0, 0, 0]
+    }
+    solve_block(test_block)
+    
+    add_block(test_block, block_contents)
+    
+
+    # while True:
+    #     #   Next block's parent, version, difficulty
+    #     next_header = get_next()
+    #     #   Construct a block with our name in the contents that appends to the
+    #     #   head of the main chain
+    #     new_block = make_block(next_header, block_contents)
+    #     #   Solve the POW
+    #     print "Solving block..."
+    #     print new_block
+    #     solve_block(new_block)
+    #     #   Send to the server
+    #     add_block(new_block, block_contents)
 
 def get_next():
     """
