@@ -91,7 +91,7 @@ def solve_block(b):
 
     """
     print "in solve block"
-    CHAIN_LENGTH = 15000
+    CHAIN_LENGTH = 10000
     d = b["difficulty"]
     chainStart = {} # tail --> start
     nonceMap = {}
@@ -194,6 +194,7 @@ def main():
 
     solve_block(test_block)
     print test_block["nonces"]
+    b["timestamp"] = long((time.time())*1000*1000*1000)
     check_nonces(test_block, 37)
 
     add_block(test_block, block_contents)
