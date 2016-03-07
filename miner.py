@@ -14,7 +14,7 @@ import requests
 NODE_URL = "http://6857coin.csail.mit.edu:8080"
 
 def find_collision(b, start1, start2, i, CHAIN_LENGTH):
-    print 'in find collision'
+    # print 'in find collision'
     x = 0
     b["nonces"][1] = start1
 
@@ -24,6 +24,9 @@ def find_collision(b, start1, start2, i, CHAIN_LENGTH):
     while x < CHAIN_LENGTH-i-1:
         hashed_block = hash_block_nonce_i(b,1).encode('hex')
         hash1 = int(hashed_block, 16) %2**d
+
+        # hash1 = hash_nonce(b["nonces"][1], d)
+
         b["nonces"][1] = hash1
         x+=1
 
@@ -31,16 +34,22 @@ def find_collision(b, start1, start2, i, CHAIN_LENGTH):
         while x < CHAIN_LENGTH:
             hashed_block = hash_block_nonce_i(b,1).encode('hex')
             hash1 = int(hashed_block, 16) %2**d
+
+            # hash1 = hash_nonce(b["nonces"][1], d)
+
             hashed_block = hash_block_nonce_i(b,2).encode('hex')
             hash2 = int(hashed_block, 16) %2**d
+
+            # hash2 = hash_nonce(b["nonces"][2], d)
+
             if hash1 == hash2:
-                print 'collision found ' + str([b["nonces"][1] , b["nonces"][2] , hash1])
+                # print 'collision found ' + str([b["nonces"][1] , b["nonces"][2] , hash1])
                 return [b["nonces"][1] , b["nonces"][2] , hash1]
             else:
                 b["nonces"][1] = hash1
                 b["nonces"][2] = hash2
                 x+=1
-        print "same start " + str(b["nonces"][1] == b["nonces"][2])
+        # print "same start " + str(b["nonces"][1] == b["nonces"][2])
         # print 'same start'
         return [None, None, False]
     return [None, None, False]
@@ -48,6 +57,29 @@ def find_collision(b, start1, start2, i, CHAIN_LENGTH):
 def hash_nonce(nonce, d):
     new_hash = H(str(nonce)).digest().encode('hex')
     return int(new_hash,16) % 2**d
+
+def hash_nonce_block(nonce, d, b,i):
+    b["nonces"][0] = nonce
+    hashed_block = hash_block_nonce_i(b,i).encode('hex')
+    current_hash = int(hashed_block, 16) %2**d
+    return current_hash
+
+def naiive(nonce_dict, b):
+    d = b["difficulty"]
+    stored_keys = nonce_dict.keys()
+    while True:
+        new_nonce = rand_nonce(b["difficulty"])
+        b["nonces"][0] = new_nonce
+        new_hash = hash_block_nonce_i(b,0).encode('hex') 
+        new_hash = int(new_hash, 16) % 2**d
+        if new_hash in stored_keys:
+            print 'hash in dict'
+            if new_nonce not in nonce_dict[new_hash]:
+                print 'found nonce'
+                b["nonces"] = nonce_dict[new_hash] + [new_nonce]
+                return
+
+
 
 def solve_block(b):
     """
@@ -59,7 +91,7 @@ def solve_block(b):
 
     """
     print "in solve block"
-    CHAIN_LENGTH = 10
+    CHAIN_LENGTH = 15000
     d = b["difficulty"]
     chainStart = {} # tail --> start
     nonceMap = {}
@@ -69,7 +101,7 @@ def solve_block(b):
     x = 0
     while True:
         new_start = rand_nonce(b["difficulty"])
-        print '\n \n \n  new chain ' + str(new_start)
+        # print '\n  new chain ' + str(new_start)
         current_hash = new_start
 
         i = 0
@@ -78,15 +110,19 @@ def solve_block(b):
         while i < CHAIN_LENGTH-1:
             i += 1
 
+            # current_hash = hash_nonce_block(current_hash, d, b,0)
+            
             b["nonces"][0] = current_hash
             hashed_block = hash_block_nonce_i(b,0).encode('hex')
             current_hash = int(hashed_block, 16) % 2** d 
 
+            # current_hash = hash_nonce(current_hash, d)
+
             if current_hash in tailList and found == False:
                 found = True
                 
-                print "found in tail list"
-                print [current_hash, len(tailList)]
+                # print "found in tail list"
+                # print [current_hash, len(tailList)]
 
                 saved_start = chainStart[current_hash]
                 [nonce1, nonce2, image] = find_collision(b, saved_start, new_start,i, CHAIN_LENGTH)
@@ -95,6 +131,7 @@ def solve_block(b):
                     print x
                     x+=1
                     if image in nonceMap:
+                        "in nonce map"
                         existingNonce = nonceMap[image]
                         if nonce1 not in existingNonce and nonce2 not in existingNonce:
                             b["nonces"] = existingNonce + [nonce1]
@@ -114,7 +151,9 @@ def solve_block(b):
             if i == CHAIN_LENGTH-1:
                 tailList.append(current_hash)
                 chainStart[current_hash] = new_start
-
+            if x > 1000:
+                naiive(nonceMap, b)
+                return
     return 
 
 def check_nonces(b, d):
@@ -146,7 +185,7 @@ def main():
 
     test_block = {
     "parentid": "169740d5c4711f3cbbde6b9bfbbe8b3d236879d849d1c137660fce9e7884cae7",
-    "difficulty": 5,
+    "difficulty": 37,
     "root": hash_to_hex(block_contents),
     "timestamp": long((time.time()+600)*1000*1000*1000),
     "version": 0,
@@ -155,9 +194,9 @@ def main():
 
     solve_block(test_block)
     print test_block["nonces"]
-    check_nonces(test_block, 5)
+    check_nonces(test_block, 37)
 
-    # add_block(test_block, block_contents)
+    add_block(test_block, block_contents)
 
 def get_next():
     """
